@@ -14,13 +14,13 @@
     <ImageView
         android:layout_width="150dp"
         android:layout_height="150dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="10dp"
         android:src="@drawable/logo"/>
 
     <TextView
         android:layout_width="293dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="10dp"
         android:text="CREAR CUENTA"
         android:textAlignment="center"
         android:fontFamily="cursive"
@@ -66,6 +66,18 @@
             android:layout_height="wrap_content"
             android:hint="Email"
             android:inputType="text"
+            android:padding="14dp"
+            android:layout_marginBottom="10dp"
+            android:backgroundTint="@color/black"
+            android:textColor="@color/black"
+            android:textColorHint="@color/Gray"/>
+
+        <EditText
+            android:id="@+id/etTelefono"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Telefono"
+            android:inputType="number|phone"
             android:padding="14dp"
             android:layout_marginBottom="10dp"
             android:backgroundTint="@color/black"
