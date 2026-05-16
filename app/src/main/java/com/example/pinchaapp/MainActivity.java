@@ -1,7 +1,6 @@
 package com.example.pinchaapp;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
@@ -11,20 +10,23 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-import com.example.pinchaapp.database.VacunAppDatabase;
-import com.example.pinchaapp.database.dao.UsuarioDao;
-import com.example.pinchaapp.database.entities.Usuario;
+import com.example.pinchaapp.dto.AuthResponseDto;
+import com.example.pinchaapp.dto.LoginDto;
+import com.example.pinchaapp.dto.RespuestaDto;
+import com.example.pinchaapp.network.ApiClient;
+import com.example.pinchaapp.network.ApiService;
+import com.example.pinchaapp.session.SessionManager;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
     private EditText etEmail, etPassword;
     private Button btnLogin, btnCrearCuenta;
     private TextView tvOlvido;
-    private UsuarioDao usuarioDao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,8 +34,15 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // DAO
-        usuarioDao = VacunAppDatabase.getInstance(this).usuarioDao();
+        // Inicializa el SessionManager
+        SessionManager.init(this);
+
+        // Si ya hay sesion activa se salta al dashboard
+        if (SessionManager.haySesion()) {
+            startActivity(new Intent(this, pantalla_dashboard.class));
+            finish();
+            return;
+        }
 
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
@@ -50,19 +59,52 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            new Thread(() -> {
-                Usuario usuario = usuarioDao.login(email, password);
+            // Llama a la API
+            ApiService api = ApiClient.getInstance().create(ApiService.class);
+            LoginDto loginDto = new LoginDto(email, password);
 
-                runOnUiThread(() -> {
-                    if (usuario != null) {
-                        Toast.makeText(this, "Bienvenido " + usuario.getNombre() + "!", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(this, pantalla_dashboard.class));
+            api.login(loginDto).enqueue(new Callback<RespuestaDto<AuthResponseDto>>() {
+                @Override
+                public void onResponse(Call<RespuestaDto<AuthResponseDto>> call,
+                                       Response<RespuestaDto<AuthResponseDto>> response) {
+                    if (response.isSuccessful() && response.body() != null
+                            && response.body().isExito()) {
+
+                        // Guardar la sesion completa
+                        AuthResponseDto data = response.body().getData();
+                        SessionManager.guardarSesion(
+                                data.getToken(),
+                                data.getIdUsuario(),
+                                data.getNombre(),
+                                data.getCorreo(),
+                                data.getRol()
+                        );
+
+                        Toast.makeText(MainActivity.this,
+                                "¡Bienvenido " + data.getNombre() + "!",
+                                Toast.LENGTH_SHORT).show();
+
+                        startActivity(new Intent(MainActivity.this, pantalla_dashboard.class));
                         finish();
+
                     } else {
-                        Toast.makeText(this, "Correo o contraseña incorrectos", Toast.LENGTH_SHORT).show();
+                        // La API si respondio pero con error (correo/password incorrectos)
+                        String mensaje = "Correo o contraseña incorrectos";
+                        if (response.body() != null) {
+                            mensaje = response.body().getMensaje();
+                        }
+                        Toast.makeText(MainActivity.this, mensaje, Toast.LENGTH_SHORT).show();
                     }
-                });
-            }).start();
+                }
+
+                @Override
+                public void onFailure(Call<RespuestaDto<AuthResponseDto>> call, Throwable t) {
+                    // No hay conexion o la API no responde
+                    Toast.makeText(MainActivity.this,
+                            "Error de conexion, verifica tu internet",
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
         });
 
         btnCrearCuenta.setOnClickListener(v ->
@@ -72,6 +114,5 @@ public class MainActivity extends AppCompatActivity {
         tvOlvido.setOnClickListener(v ->
                 Toast.makeText(this, "aun me falta", Toast.LENGTH_SHORT).show()
         );
-
     }
 }
