@@ -2,6 +2,7 @@ package com.example.pinchaapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.View;
 import android.widget.TextView;
 
@@ -44,6 +45,7 @@ public class AlergiasMiembro extends AppCompatActivity {
     String fechaNacimiento;
     String sexo;
     int idPerfil;
+    String tipoPerfil;
 
     TextView txtNombreMenu, txtEdadMenu;
     VacunAppDatabase db;
@@ -74,7 +76,7 @@ public class AlergiasMiembro extends AppCompatActivity {
         nombrePerfil    = getIntent().getStringExtra("nombre");
         fechaNacimiento = getIntent().getStringExtra("fechaNacimiento");
         sexo            = getIntent().getStringExtra("sexo");
-
+        tipoPerfil = getIntent().getStringExtra("tipoPerfil");
         // =========================
         // CARD PERFIL
         // =========================
@@ -108,6 +110,15 @@ public class AlergiasMiembro extends AppCompatActivity {
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
+        // SI ES MASCOTA
+        if (tipoPerfil != null && tipoPerfil.equals("Mascota")) {
+            Menu menu = navigationView.getMenu();
+            // ocultar opciones humanas
+            menu.findItem(R.id.nav_centros).setVisible(false);
+            menu.findItem(R.id.nav_campanias).setVisible(false);
+        }
+
+
         // =========================
         // EVENTOS MENU
         // =========================
@@ -120,6 +131,7 @@ public class AlergiasMiembro extends AppCompatActivity {
                 intent.putExtra("nombre",          nombrePerfil);
                 intent.putExtra("fechaNacimiento", fechaNacimiento);
                 intent.putExtra("sexo",            sexo);
+                intent.putExtra("tipoPerfil",      tipoPerfil);
                 startActivity(intent);
 
             } else if (id == R.id.nav_escanear) {
@@ -128,6 +140,7 @@ public class AlergiasMiembro extends AppCompatActivity {
                 intent.putExtra("nombre",          nombrePerfil);
                 intent.putExtra("fechaNacimiento", fechaNacimiento);
                 intent.putExtra("sexo",            sexo);
+                intent.putExtra("tipoPerfil",      tipoPerfil);
                 startActivity(intent);
 
             } else if (id == R.id.nav_carnets) {
@@ -136,6 +149,7 @@ public class AlergiasMiembro extends AppCompatActivity {
                 intent.putExtra("nombre",          nombrePerfil);
                 intent.putExtra("fechaNacimiento", fechaNacimiento);
                 intent.putExtra("sexo",            sexo);
+                intent.putExtra("tipoPerfil",      tipoPerfil);
                 startActivity(intent);
 
             } else if (id == R.id.nav_centros) {
@@ -160,6 +174,7 @@ public class AlergiasMiembro extends AppCompatActivity {
                 intent.putExtra("nombre",          nombrePerfil);
                 intent.putExtra("fechaNacimiento", fechaNacimiento);
                 intent.putExtra("sexo",            sexo);
+                intent.putExtra("tipoPerfil",      tipoPerfil);
                 startActivity(intent);
 
             } else if (id == R.id.nav_perfiles) {

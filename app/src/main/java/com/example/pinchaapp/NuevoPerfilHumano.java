@@ -2,9 +2,12 @@ package com.example.pinchaapp;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -164,7 +167,7 @@ public class NuevoPerfilHumano extends AppCompatActivity {
                                 nombre,
                                 sexo,
                                 fecha,
-                                embarazada
+                                embarazada, "Humano"
                         );
 
                 perfilHumanoDao.insertarPerfil(nuevoPerfil);
@@ -204,5 +207,29 @@ public class NuevoPerfilHumano extends AppCompatActivity {
             finish();
 
         });
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+
+        View view = getCurrentFocus();
+
+        if (view instanceof EditText) {
+
+            Rect outRect = new Rect();
+            view.getGlobalVisibleRect(outRect);
+
+            if (!outRect.contains((int) ev.getRawX(), (int) ev.getRawY())) {
+
+                view.clearFocus();
+
+                InputMethodManager imm =
+                        (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        }
+
+        return super.dispatchTouchEvent(ev);
     }
 }

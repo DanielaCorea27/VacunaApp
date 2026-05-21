@@ -36,86 +36,149 @@
         android:padding="24dp"
         android:elevation="10dp">
 
-        <EditText
-            android:id="@+id/etNombre"
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Nombre"
-            android:inputType="text"
-            android:padding="14dp"
             android:layout_marginBottom="10dp"
-            android:backgroundTint="@color/black"
-            android:textColor="@color/black"
-            android:textColorHint="@color/Gray"/>
+            app:boxStrokeColor="@color/black">
 
-        <EditText
-            android:id="@+id/etApellido"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etNombre"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Nombres"
+                android:inputType="textCapWords"
+                android:textColor="@color/black"
+                android:textColorHint="@color/Gray"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Apellido"
-            android:inputType="text"
-            android:padding="14dp"
             android:layout_marginBottom="10dp"
-            android:backgroundTint="@color/black"
-            android:textColor="@color/black"
-            android:textColorHint="@color/Gray"/>
+            app:boxStrokeColor="@color/black">
 
-        <EditText
-            android:id="@+id/etEmail"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etApellido"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Apellidos"
+                android:inputType="textCapWords"
+                android:textColor="@color/black"
+                android:textColorHint="@color/Gray"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Email"
-            android:inputType="text"
-            android:padding="14dp"
             android:layout_marginBottom="10dp"
-            android:backgroundTint="@color/black"
-            android:textColor="@color/black"
-            android:textColorHint="@color/Gray"/>
+            app:boxStrokeColor="@color/black">
 
-        <EditText
-            android:id="@+id/etTelefono"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Email"
+                android:inputType="textEmailAddress"
+                android:textColor="@color/black"
+                android:textColorHint="@color/Gray"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Telefono"
-            android:inputType="number|phone"
-            android:padding="14dp"
             android:layout_marginBottom="10dp"
-            android:backgroundTint="@color/black"
-            android:textColor="@color/black"
-            android:textColorHint="@color/Gray"/>
+            app:boxStrokeColor="@color/black">
 
-        <EditText
-            android:id="@+id/etPassword"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etTelefono"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Telefono (opcional)"
+                android:inputType="phone"
+                android:maxLength="8"
+                android:textColor="@color/black"
+                android:textColorHint="@color/Gray"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Contraseña"
-            android:inputType="textPassword"
-            android:padding="14dp"
             android:layout_marginBottom="10dp"
-            android:backgroundTint="@color/black"
-            android:textColor="@color/black"
-            android:textColorHint="@color/Gray"/>
+            app:endIconMode="password_toggle"
+            app:endIconTint="@color/black"
+            app:boxStrokeColor="@color/black">
 
-        <EditText
-            android:id="@+id/etConfirmPassword"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Contraseña"
+                android:inputType="textPassword"
+                android:textColor="@color/black"
+                android:textColorHint="@color/Gray"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Confirmar Contraseña"
-            android:inputType="textPassword"
-            android:padding="14dp"
             android:layout_marginBottom="10dp"
-            android:backgroundTint="@color/black"
-            android:textColor="@color/black"
-            android:textColorHint="@color/Gray"/>
+            app:endIconMode="password_toggle"
+            app:endIconTint="@color/black"
+            app:boxStrokeColor="@color/black">
 
-        <Button
-            android:id="@+id/btnCrearCuenta"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etConfirmPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Confirmar Contraseña"
+                android:inputType="textPassword"
+                android:textColor="@color/black"
+                android:textColorHint="@color/Gray"/>
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="0dp"
-            android:text="Crear Cuenta"
-            style="@style/LoginSignInStyle"
-            android:padding="14dp" />
+            android:orientation="horizontal"
+            android:layout_marginTop="20dp"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btnCancelar"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:textSize="13dp"
+                android:layout_weight="1"
+                android:text="CANCELAR"
+                style="@style/LoginButtonStyle"/>
+
+            <Space
+                android:layout_width="10dp"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/btnCrearCuenta"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:textSize="13dp"
+                android:text="Crear Cuenta"
+                style="@style/LoginSignInStyle"/>
+
+
+        </LinearLayout>
 
     </LinearLayout>
 

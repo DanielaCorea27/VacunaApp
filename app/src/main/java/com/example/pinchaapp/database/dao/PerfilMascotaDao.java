@@ -28,4 +28,7 @@ public interface PerfilMascotaDao {
     @Query("SELECT * FROM PerfilMascota WHERE id = :id")
     PerfilMascota obtenerPerfilPorId(int id);
 
+    @Query("SELECT * FROM perfilMascota")
+    List<PerfilMascota> obtenerTodos();
+
 }

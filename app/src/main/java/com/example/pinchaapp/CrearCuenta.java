@@ -1,8 +1,12 @@
 package com.example.pinchaapp;
 
 import android.content.Intent;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -19,7 +23,7 @@ import com.example.pinchaapp.dto.RegistroDto;
 public class CrearCuenta extends AppCompatActivity {
 
     private EditText etNombre, etApellido, etEmail, etTelefono, etPassword, etConfirmPassword;
-    private Button btnCrearCuenta;
+    private Button btnCrearCuenta, btnCancelar;
     private UsuarioDao usuarioDao;
 
 
@@ -39,6 +43,8 @@ public class CrearCuenta extends AppCompatActivity {
         etPassword        = findViewById(R.id.etPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
         btnCrearCuenta    = findViewById(R.id.btnCrearCuenta);
+        btnCancelar       = findViewById(R.id.btnCancelar);
+
 
         btnCrearCuenta.setOnClickListener(v -> {
             String nombre   = etNombre.getText().toString().trim();
@@ -50,7 +56,7 @@ public class CrearCuenta extends AppCompatActivity {
 
             // Validaciones
             if (TextUtils.isEmpty(nombre) || TextUtils.isEmpty(apellido) ||
-                    TextUtils.isEmpty(email)  || TextUtils.isEmpty(telefono) ||
+                    TextUtils.isEmpty(email) ||
                     TextUtils.isEmpty(password) || TextUtils.isEmpty(confirm)) {
                 Toast.makeText(this, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show();
                 return;
@@ -61,7 +67,7 @@ public class CrearCuenta extends AppCompatActivity {
                 return;
             }
 
-            if (telefono.length() != 8) {
+            if (!telefono.isEmpty() && telefono.length() != 8) {
                 Toast.makeText(this, "Ingresa un telefono valido", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -114,6 +120,43 @@ public class CrearCuenta extends AppCompatActivity {
                 });
             }).start();
         });
+
+        btnCancelar.setOnClickListener(v -> {
+
+            startActivity(
+                    new Intent(
+                            CrearCuenta.this,
+                            MainActivity.class
+                    )
+            );
+
+            finish();
+
+        });
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+
+        View view = getCurrentFocus();
+
+        if (view instanceof EditText) {
+
+            Rect outRect = new Rect();
+            view.getGlobalVisibleRect(outRect);
+
+            if (!outRect.contains((int) ev.getRawX(), (int) ev.getRawY())) {
+
+                view.clearFocus();
+
+                InputMethodManager imm =
+                        (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        }
+
+        return super.dispatchTouchEvent(ev);
     }
 
 }

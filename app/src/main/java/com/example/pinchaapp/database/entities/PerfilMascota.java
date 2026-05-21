@@ -10,10 +10,11 @@ public class PerfilMascota {
     @PrimaryKey(autoGenerate = true)
     private int id;
 
-    public PerfilMascota(String nombre, String especie, String fechaNacimiento) {
+    public PerfilMascota(String nombre, String especie, String fechaNacimiento, String tipo) {
         this.nombre = nombre;
         this.especie = especie;
         this.fechaNacimiento = fechaNacimiento;
+        this.tipo = tipo;
     }
 
     @ColumnInfo(name = "nombre")
@@ -56,5 +57,16 @@ public class PerfilMascota {
 
     @ColumnInfo(name = "fechaNacimiento")
     private String fechaNacimiento;
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    @ColumnInfo(name = "tipo")
+    private String tipo;
 
 }

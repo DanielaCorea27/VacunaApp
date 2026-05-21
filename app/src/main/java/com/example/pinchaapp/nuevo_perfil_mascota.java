@@ -2,8 +2,11 @@ package com.example.pinchaapp;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -123,23 +126,38 @@ public class nuevo_perfil_mascota extends AppCompatActivity {
                 return;
             }
             // Insertar perfil en Room
-            PerfilMascota nuevoPerfil = new PerfilMascota(nombre, especie, fecha);
-            perfilMascotaDao.insertarPerfil(nuevoPerfil);
+            PerfilMascota nuevoPerfil =
+                    new PerfilMascota(
+                            nombre,
+                            especie,
+                            fecha,
+                            "Mascota"
+                    );
 
-            Toast.makeText(
-                    nuevo_perfil_mascota.this,
-                    "Perfil creado correctamente",
-                    Toast.LENGTH_SHORT
-            ).show();
+            new Thread(() -> {
 
-            Intent intent = new Intent(
-                    nuevo_perfil_mascota.this,
-                    pantalla_dashboard.class
-            );
+                perfilMascotaDao.insertarPerfil(nuevoPerfil);
 
-            startActivity(intent);
+                runOnUiThread(() -> {
 
-            finish();
+                    Toast.makeText(
+                            nuevo_perfil_mascota.this,
+                            "Perfil creado correctamente",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                    Intent intent = new Intent(
+                            nuevo_perfil_mascota.this,
+                            pantalla_dashboard.class
+                    );
+
+                    startActivity(intent);
+
+                    finish();
+
+                });
+
+            }).start();
 
         });
         btnCancelar.setOnClickListener(v -> {
@@ -154,5 +172,28 @@ public class nuevo_perfil_mascota extends AppCompatActivity {
             finish();
 
         });
+    }
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+
+        View view = getCurrentFocus();
+
+        if (view instanceof EditText) {
+
+            Rect outRect = new Rect();
+            view.getGlobalVisibleRect(outRect);
+
+            if (!outRect.contains((int) ev.getRawX(), (int) ev.getRawY())) {
+
+                view.clearFocus();
+
+                InputMethodManager imm =
+                        (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        }
+
+        return super.dispatchTouchEvent(ev);
     }
 }

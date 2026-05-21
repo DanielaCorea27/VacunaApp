@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.pinchaapp.R;
 import com.example.pinchaapp.database.entities.PerfilHumano;
+import com.example.pinchaapp.database.entities.PerfilMascota;
 import com.example.pinchaapp.carnet_de_vacunacion;
 
 
@@ -27,10 +28,10 @@ public class PerfilAdapter
         extends RecyclerView.Adapter<PerfilAdapter.ViewHolder> {
 
     Context context;
-    List<PerfilHumano> lista;
+    List<Object> lista;
 
     public PerfilAdapter(Context context,
-                         List<PerfilHumano> lista) {
+                         List<Object> lista) {
 
         this.context = context;
         this.lista = lista;
@@ -59,50 +60,137 @@ public class PerfilAdapter
             int position
     ) {
 
-        PerfilHumano perfil = lista.get(position);
+        Object item = lista.get(position);
 
-        holder.tvNombre.setText(perfil.getNombre());
+        // =========================
+        // PERFIL HUMANO
+        // =========================
+        if (item instanceof PerfilHumano) {
 
-        String esquema =
-                obtenerEsquema(
-                        calcularEdad(perfil.getFechaNacimiento()),
+            PerfilHumano perfil = (PerfilHumano) item;
+
+            holder.tvNombre.setText(perfil.getNombre());
+
+            String esquema =
+                    obtenerEsquema(
+                            calcularEdad(perfil.getFechaNacimiento()),
+                            perfil.getSexo(),
+                            perfil.getTipo()
+                    );
+
+            holder.tvEsquema.setText(esquema);
+
+            aplicarColor(holder, perfil);
+
+            holder.layoutCard.setOnClickListener(v -> {
+
+                Intent intent =
+                        new Intent(
+                                context,
+                                carnet_de_vacunacion.class
+                        );
+
+                intent.putExtra(
+                        "idPerfil",
+                        perfil.getId()
+                );
+
+                intent.putExtra(
+                        "nombre",
+                        perfil.getNombre()
+                );
+
+                intent.putExtra(
+                        "fechaNacimiento",
+                        perfil.getFechaNacimiento()
+                );
+
+                intent.putExtra(
+                        "sexo",
                         perfil.getSexo()
                 );
 
-        holder.tvEsquema.setText(esquema);
+                intent.putExtra(
+                        "embarazada",
+                        perfil.isEmbarazada()
+                );
 
-        aplicarColor(holder, perfil);
+                intent.putExtra("tipoPerfil", perfil.getTipo());
 
-        // CLICK DEL PERFIL
-        holder.layoutCard.setOnClickListener(v -> {
+                context.startActivity(intent);
 
-            Intent intent =
-                    new Intent(
+            });
+
+        }
+
+        // =========================
+        // PERFIL MASCOTA
+        // =========================
+        else if (item instanceof PerfilMascota) {
+
+            PerfilMascota mascota =
+                    (PerfilMascota) item;
+
+            holder.tvNombre.setText(
+                    mascota.getNombre()
+            );
+
+            holder.tvEsquema.setText(
+                    mascota.getEspecie()
+            );
+
+            // COLOR MASCOTA
+            holder.layoutCard.setBackgroundColor(
+                    ContextCompat.getColor(
                             context,
-                            carnet_de_vacunacion.class
-                    );
-
-            intent.putExtra(
-                    "idPerfil",
-                    perfil.getId()
+                            R.color.pet_primary
+                    )
             );
 
-            intent.putExtra(
-                    "nombre",
-                    perfil.getNombre()
+            holder.tvNombre.setTextColor(
+                    ContextCompat.getColor(
+                            context,
+                            R.color.skyblue
+                    )
             );
 
-            intent.putExtra("fechaNacimiento", perfil.getFechaNacimiento());
-
-            intent.putExtra(
-                    "sexo",
-                    perfil.getSexo()
+            holder.tvEsquema.setTextColor(
+                    ContextCompat.getColor(
+                            context,
+                            R.color.blue_dark
+                    )
             );
-            intent.putExtra("embarazada", perfil.isEmbarazada());
 
-            context.startActivity(intent);
 
-        });
+            holder.layoutCard.setOnClickListener(v -> {
+
+                Intent intent =
+                        new Intent(
+                                context,
+                                carnet_de_vacunacion.class
+                        );
+
+                intent.putExtra(
+                        "idPerfil",
+                        mascota.getId()
+                );
+
+                intent.putExtra(
+                        "nombre",
+                        mascota.getNombre()
+                );
+
+                intent.putExtra(
+                        "fechaNacimiento",
+                        mascota.getFechaNacimiento()
+                );
+
+                intent.putExtra("tipoPerfil", mascota.getTipo());
+
+                context.startActivity(intent);
+
+            });
+        }
     }
 
     @Override
@@ -162,9 +250,16 @@ public class PerfilAdapter
     }
     private String obtenerEsquema(
             int edad,
-            String sexo
+            String sexo,
+            String tipo
     ) {
 
+        // SI ES MASCOTA
+        if (tipo != null && tipo.equals("Mascota")) {
+            return "Esquema Mascota";
+        }
+
+        // SI ES HUMANO
         if (edad <= 5) {
             return "Esquema Infantil";
         }
@@ -188,6 +283,33 @@ public class PerfilAdapter
             ViewHolder holder,
             PerfilHumano perfil
     ) {
+        // SI ES MASCOTA
+        if (perfil.getTipo() != null &&
+                perfil.getTipo().equals("Mascota")) {
+
+            holder.layoutCard.setBackgroundColor(
+                    ContextCompat.getColor(
+                            context,
+                            R.color.skyblue
+                    )
+            );
+
+            holder.tvNombre.setTextColor(
+                    ContextCompat.getColor(
+                            context,
+                            R.color.blue_dark
+                    )
+            );
+
+            holder.tvEsquema.setTextColor(
+                    ContextCompat.getColor(
+                            context,
+                            R.color.blue_dark
+                    )
+            );
+
+            return;
+        }
 
         int edad =
                 calcularEdad(

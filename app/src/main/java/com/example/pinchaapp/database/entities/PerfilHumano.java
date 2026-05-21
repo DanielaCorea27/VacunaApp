@@ -10,11 +10,12 @@ public class PerfilHumano {
     @PrimaryKey(autoGenerate = true)
     private int id;
 
-    public PerfilHumano(String nombre, String sexo, String fechaNacimiento, boolean embarazada) {
+    public PerfilHumano(String nombre, String sexo, String fechaNacimiento, boolean embarazada, String tipo) {
         this.nombre = nombre;
         this.sexo = sexo;
         this.fechaNacimiento = fechaNacimiento;
         this.embarazada = embarazada;
+        this.tipo = tipo;
     }
     public PerfilHumano() {
     }
@@ -70,4 +71,15 @@ public class PerfilHumano {
 
     @ColumnInfo(name = "embarazada")
     private boolean embarazada;
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    @ColumnInfo(name = "tipo")
+    private String tipo;
 }

@@ -19,7 +19,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
+import java.util.ArrayList;
 import com.example.pinchaapp.adapters.PerfilAdapter;
 import com.example.pinchaapp.database.VacunAppDatabase;
 import com.example.pinchaapp.database.entities.PerfilHumano;
@@ -47,9 +47,19 @@ public class pantalla_dashboard extends AppCompatActivity {
 
         new Thread(() -> {
 
-            List<PerfilHumano> lista =
+            List<Object> lista = new ArrayList<>();
+
+            // HUMANOS
+            lista.addAll(
                     db.perfilHumanoDao()
-                            .obtenerPerfiles();
+                            .obtenerPerfiles()
+            );
+
+            // MASCOTAS
+            lista.addAll(
+                    db.perfilMascotaDao()
+                            .obtenerTodos()
+            );
 
             runOnUiThread(() -> {
 
@@ -100,7 +110,6 @@ public class pantalla_dashboard extends AppCompatActivity {
                                     )
                             );
 
-                            finish();
 
                             return true;
 
@@ -117,7 +126,6 @@ public class pantalla_dashboard extends AppCompatActivity {
 
                                     )
                             );
-                            finish();
                             return true;
                         }
 
