@@ -1,18 +1,22 @@
 package com.example.pinchaapp.network;
 
+
 import com.example.pinchaapp.dto.ActualizarEstadoDto;
 import com.example.pinchaapp.dto.AlergiaDto;
 import com.example.pinchaapp.dto.AsignarAlergiaDto;
 import com.example.pinchaapp.dto.AuthResponseDto;
 import com.example.pinchaapp.dto.CampaniaDto;
 import com.example.pinchaapp.dto.CarnetDto;
+
+import com.example.pinchaapp.dto.AppManejoDto;
+
 import com.example.pinchaapp.dto.CentroDto;
 import com.example.pinchaapp.dto.CertificadoDto;
 import com.example.pinchaapp.dto.CrearMiembroDto;
 import com.example.pinchaapp.dto.DispositivoDto;
 import com.example.pinchaapp.dto.GoogleAuthDto;
 import com.example.pinchaapp.dto.HistorialDto;
-import com.example.pinchaapp.dto.ImcResultDto;
+import com.example.pinchaapp.dto.ImcDto;
 import com.example.pinchaapp.dto.LoginDto;
 import com.example.pinchaapp.dto.MiembroDto;
 import com.example.pinchaapp.dto.PerfilMiembroDto;
@@ -112,19 +116,26 @@ public interface ApiService {
             @Query("radioKm") double radioKm
     );
 
+    @GET("api/centros/campania/{idCampania}")
+    Call<RespuestaDto<List<CentroDto>>> getCentrosPorCampania(@Path("idCampania") int idCampania);
+
     // ==================== CAMPAÑAS ====================
     @GET("api/campanias")
     Call<RespuestaDto<List<CampaniaDto>>> getCampanias();
+
+    // ==================== IMC ====================
+    @POST("api/imc")
+    Call<RespuestaDto<ImcDto.ImcResponseDto>> registrarImc(@Body ImcDto.RegistrarImcDto body);
 
     @GET("api/campanias/{id}")
     Call<RespuestaDto<CampaniaDto>> getCampania(@Path("id") int id);
 
     // ==================== IMC ====================
     @GET("api/imc/{idMiembro}")
-    Call<RespuestaDto<List<ImcResultDto>>> getHistorialImc(@Path("idMiembro") int idMiembro);
+    Call<RespuestaDto<List<ImcDto>>> getHistorialImc(@Path("idMiembro") int idMiembro);
 
     @POST("api/imc")
-    Call<RespuestaDto<ImcResultDto>> registrarImc(@Body RegistrarImcDto body);
+    Call<RespuestaDto<ImcDto>> registrarImc(@Body RegistrarImcDto body);
 
     @GET("api/imc/carnet/{idMiembro}")
     Call<RespuestaDto<List<CarnetDto>>> getCarnets(@Path("idMiembro") int idMiembro);
@@ -147,6 +158,7 @@ public interface ApiService {
             @Path("idMiembro") int idMiembro,
             @Body AsignarAlergiaDto body
     );
+
 
     @DELETE("api/alergias/miembro/{idMiembro}/{idAlergia}")
     Call<RespuestaDto<Object>> quitarAlergia(
@@ -173,4 +185,11 @@ public interface ApiService {
 
     @DELETE("api/dispositivousuario/{id}")
     Call<RespuestaDto<Object>> desactivarDispositivo(@Path("id") int id);
+
+    @GET("api/Dashboard/admin")
+    Call<RespuestaDto<AppManejoDto.DashboardAdminResponseDto>> getDashboardAdmin();
+    @GET("api/Dashboard/usuario")
+    Call<RespuestaDto<AppManejoDto.DashboardUsuarioResponseDto>> getDashboardUsuario();
+
+
 }
