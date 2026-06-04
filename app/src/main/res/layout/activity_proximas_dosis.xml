@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5F5F5">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:background="#42C4F7"
+        app:title="Próximas Dosis"
+        app:titleTextColor="@android:color/white"
+        app:navigationIcon="@android:drawable/ic_menu_revert"
+        app:navigationIconTint="@android:color/white" />
+
+    <!-- Leyenda de colores -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical">
+
+        <View android:layout_width="12dp" android:layout_height="12dp"
+            android:background="#F44336" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="≤ 7 días"
+            android:textSize="11sp" android:textColor="#616161"
+            android:layout_marginStart="4dp" android:layout_marginEnd="12dp"/>
+
+        <View android:layout_width="12dp" android:layout_height="12dp"
+            android:background="#FF9800" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="8 – 30 días"
+            android:textSize="11sp" android:textColor="#616161"
+            android:layout_marginStart="4dp" android:layout_marginEnd="12dp"/>
+
+        <View android:layout_width="12dp" android:layout_height="12dp"
+            android:background="#4CAF50" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="+ 30 días"
+            android:textSize="11sp" android:textColor="#616161"
+            android:layout_marginStart="4dp"/>
+
+    </LinearLayout>
+
+    <!-- Estado vacío / cargando -->
+    <TextView
+        android:id="@+id/txtEstado"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="32dp"
+        android:text="Cargando…"
+        android:textColor="#9E9E9E"
+        android:textSize="14sp"
+        android:visibility="visible" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvProximasDosis"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingBottom="16dp"
+        android:clipToPadding="false" />
+
+</LinearLayout>
