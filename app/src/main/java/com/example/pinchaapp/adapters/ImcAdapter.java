@@ -5,31 +5,28 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.pinchaapp.R;
+import com.example.pinchaapp.dto.ImcDto;
 
-import org.jspecify.annotations.NonNull;
-
+import java.text.SimpleDateFormat;
 import java.util.List;
-import com.example.pinchaapp.database.entities.IMCEntity;
+import java.util.Locale;
 
-public class ImcAdapter
-        extends RecyclerView.Adapter<ImcAdapter.ViewHolder> {
+public class ImcAdapter extends RecyclerView.Adapter<ImcAdapter.ViewHolder> {
 
-    List<IMCEntity> lista;
+    // 1. Ahora la lista es del tipo ResponseDto que entrega tu Retrofit / .NET
+    List<ImcDto.ImcResponseDto> lista;
 
-    public ImcAdapter(List<IMCEntity> lista) {
+    public ImcAdapter(List<ImcDto.ImcResponseDto> lista) {
         this.lista = lista;
     }
 
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(
-            @NonNull ViewGroup parent,
-            int viewType
-    ) {
-
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_imc, parent, false);
 
@@ -37,43 +34,41 @@ public class ImcAdapter
     }
 
     @Override
-    public void onBindViewHolder(
-            @NonNull ViewHolder holder,
-            int position
-    ) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        ImcDto.ImcResponseDto imc = lista.get(position);
 
-        IMCEntity imc = lista.get(position);
-
+        // 2. Mapeamos "Resultado" de la API al texto del IMC (con 1 decimal)
         holder.txtIMC.setText(
-                "IMC: " + String.format("%.1f", imc.getImc())
+                "IMC: " + String.format(Locale.getDefault(), "%.1f", imc.getResultado())
         );
 
-        holder.txtCategoria.setText(imc.getCategoria());
+        // 3. Mapeamos "Clasificacion" de la API a la Categoría visual
+        holder.txtCategoria.setText(imc.getClasificacion());
 
-        holder.txtFecha.setText(imc.getFecha());
+        // 4. Formateamos la Fecha tipo Date que manda Gson a texto ("dd/MM/yyyy")
+        if (imc.getFecha() != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            holder.txtFecha.setText(sdf.format(imc.getFecha()));
+        } else {
+            holder.txtFecha.setText("Sin fecha");
+        }
     }
 
     @Override
     public int getItemCount() {
-        return lista.size();
+        return lista != null ? lista.size() : 0;
     }
 
-    public static class ViewHolder
-            extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
 
         TextView txtIMC, txtCategoria, txtFecha;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            txtIMC =
-                    itemView.findViewById(R.id.txtIMC);
-
-            txtCategoria =
-                    itemView.findViewById(R.id.txtCategoria);
-
-            txtFecha =
-                    itemView.findViewById(R.id.txtFecha);
+            txtIMC = itemView.findViewById(R.id.txtIMC);
+            txtCategoria = itemView.findViewById(R.id.txtCategoria);
+            txtFecha = itemView.findViewById(R.id.txtFecha);
         }
     }
 }

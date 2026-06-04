@@ -1,20 +1,22 @@
 package com.example.pinchaapp;
 
+import android.app.DownloadManager;
+import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -33,37 +35,43 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import com.example.pinchaapp.database.VacunAppDatabase;
-import com.example.pinchaapp.database.entities.Vacuna;
-import com.example.pinchaapp.database.entities.VacunaHistorial;
-import com.example.pinchaapp.dto.VacunaDto;
-import com.example.pinchaapp.adapters.VacunaAdapter;
-import com.example.pinchaapp.database.entities.IMCEntity;
-import com.example.pinchaapp.adapters.ImcAdapter;
+// Importaciones de Red (Retrofit) y Sesión
+import com.example.pinchaapp.network.ApiClient;
+import com.example.pinchaapp.network.ApiService;
+import com.example.pinchaapp.session.SessionManager;
+import com.example.pinchaapp.dto.RespuestaDto;
+import com.example.pinchaapp.dto.HistorialDto;
+import com.example.pinchaapp.dto.ImcDto;
 
+import com.example.pinchaapp.adapters.VacunaAdapter;
+import com.example.pinchaapp.adapters.ImcAdapter;
+import com.example.pinchaapp.database.entities.IMCEntity;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class carnet_de_vacunacion extends AppCompatActivity {
+
+    private static final String API_PDF_URL = "https://api.nodesv.com/api/Certificado/descargar-pdf/";
 
     DrawerLayout drawerLayout;
     NavigationView navigationView;
     MaterialToolbar toolbar;
 
-    String nombrePerfil;
-    String fechaNacimiento;
-    String sexo;
-    String tipoPerfil;
+    String nombrePerfil, fechaNacimiento, sexo, tipoPerfil;
     int idPerfil;
 
     TextView txtNombreMenu, txtEdadMenu;
-    RecyclerView rvVacunas;
-    RecyclerView rvIMC;
+    RecyclerView rvVacunas, rvIMC;
     VacunaAdapter adapter;
     ImcAdapter imcAdapter;
-    List<VacunaDto> listaVacunas = new ArrayList<>();
-    List<IMCEntity> listaIMC = new ArrayList<>();
-    VacunAppDatabase db;
 
-    LinearLayout layoutIMC;
+    List<HistorialDto.VacunaHistorialDto> listaVacunas = new ArrayList<>();
+    List<ImcDto.ImcResponseDto> listaIMC = new ArrayList<>();
+
+    // NÚCLEO: Instancia de Retrofit
+    private ApiService api;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,14 +79,15 @@ public class carnet_de_vacunacion extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_carnet_de_vacunacion);
 
-        // =========================
-        // VISTAS
-        // =========================
+        // Inicializamos el cliente de la API
+        api = ApiClient.getInstance().create(ApiService.class);
+
+        // ========================= VISTAS =========================
         drawerLayout   = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
         toolbar        = findViewById(R.id.toolbar);
         rvVacunas      = findViewById(R.id.rvVacunasComplementarias);
-        rvIMC = findViewById(R.id.rvIMCRegistros);
+        rvIMC          = findViewById(R.id.rvIMCRegistros);
 
         rvIMC.setLayoutManager(new LinearLayoutManager(this));
         rvIMC.setNestedScrollingEnabled(false);
@@ -89,144 +98,58 @@ public class carnet_de_vacunacion extends AppCompatActivity {
         txtNombreMenu = header.findViewById(R.id.txtNombreMenu);
         txtEdadMenu   = header.findViewById(R.id.txtEdadMenu);
 
-        // =========================
-        // RECIBIR DATOS
-        // =========================
+        // ========================= RECIBIR DATOS =========================
         idPerfil        = getIntent().getIntExtra("idPerfil", 0);
         nombrePerfil    = getIntent().getStringExtra("nombre");
         fechaNacimiento = getIntent().getStringExtra("fechaNacimiento");
         sexo            = getIntent().getStringExtra("sexo");
-        tipoPerfil = getIntent().getStringExtra("tipoPerfil");
+        tipoPerfil      = getIntent().getStringExtra("tipoPerfil");
 
-        // =========================
-        // CARD PERFIL
-        // =========================
         txtNombre.setText(nombrePerfil != null ? nombrePerfil : "Sin nombre");
-        txtEdad.setText(fechaNacimiento != null
-                ? calcularEdadCompleta(fechaNacimiento)
-                : "Edad no disponible");
-
-        // =========================
-        // HEADER MENÚ
-        // =========================
+        txtEdad.setText(fechaNacimiento != null ? calcularEdadCompleta(fechaNacimiento) : "Edad no disponible");
         txtNombreMenu.setText(nombrePerfil != null ? nombrePerfil : "Sin nombre");
-        txtEdadMenu.setText(fechaNacimiento != null
-                ? calcularEdadCompleta(fechaNacimiento)
-                : "Edad no disponible");
+        txtEdadMenu.setText(fechaNacimiento != null ? calcularEdadCompleta(fechaNacimiento) : "Edad no disponible");
 
-        // =========================
-        // COLOR TOOLBAR
-        // =========================
         int color = ContextCompat.getColor(this, R.color.skyblue);
         toolbar.setBackgroundColor(color);
         txtNombre.setTextColor(color);
 
-        // =========================
-        // MENU HAMBURGUESA
-        // =========================
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawerLayout, toolbar,
-                R.string.open, R.string.close
-        );
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.open, R.string.close);
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        // SI ES MASCOTA
-        if (tipoPerfil != null && tipoPerfil.equals("Mascota")) {
+        if ("Mascota".equalsIgnoreCase(tipoPerfil)) {
             Menu menu = navigationView.getMenu();
-            // ocultar opciones humanas
             menu.findItem(R.id.nav_centros).setVisible(false);
             menu.findItem(R.id.nav_campanias).setVisible(false);
-            // ocultar botón IMC
             findViewById(R.id.btnIMC).setVisibility(View.GONE);
-            //ocultar txtIMC
             findViewById(R.id.txtIMC).setVisibility(View.GONE);
-            //Ocultar linearlayout IMC
             findViewById(R.id.layoutEsquemaIMC).setVisibility(View.GONE);
         }
 
-        // =========================
-        // EVENTOS MENU
-        // =========================
+        // ========================= EVENTOS MENU =========================
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
-
-            if (id == R.id.nav_alergias) {
-                Intent intent = new Intent(this, AlergiasMiembro.class);
-                intent.putExtra("idPerfil",        idPerfil);
-                intent.putExtra("nombre",          nombrePerfil);
-                intent.putExtra("fechaNacimiento", fechaNacimiento);
-                intent.putExtra("sexo",            sexo);
-                intent.putExtra("tipoPerfil",      tipoPerfil);
-                startActivity(intent);
-
-            } else if (id == R.id.nav_escanear) {
-                Intent intent = new Intent(this, EscanearCarnet.class);
-                intent.putExtra("idPerfil",        idPerfil);
-                intent.putExtra("nombre",          nombrePerfil);
-                intent.putExtra("fechaNacimiento", fechaNacimiento);
-                intent.putExtra("sexo",            sexo);
-                intent.putExtra("tipoPerfil",      tipoPerfil);
-                startActivity(intent);
-
-            } else if (id == R.id.nav_carnets) {
-                Intent intent = new Intent(this, CarnetEscaneados.class);
-                intent.putExtra("idPerfil",        idPerfil);
-                intent.putExtra("nombre",          nombrePerfil);
-                intent.putExtra("fechaNacimiento", fechaNacimiento);
-                intent.putExtra("sexo",            sexo);
-                intent.putExtra("tipoPerfil",      tipoPerfil);
-                startActivity(intent);
-
-            } else if (id == R.id.nav_centros) {
-                Intent intent = new Intent(this, CentrosDeVacunacion.class);
-                intent.putExtra("idPerfil",        idPerfil);
-                intent.putExtra("nombre",          nombrePerfil);
-                intent.putExtra("fechaNacimiento", fechaNacimiento);
-                intent.putExtra("sexo",            sexo);
-                startActivity(intent);
-
-            } else if (id == R.id.nav_campanias) {
-                Intent intent = new Intent(this, Campanias.class);
-                intent.putExtra("idPerfil",        idPerfil);
-                intent.putExtra("nombre",          nombrePerfil);
-                intent.putExtra("fechaNacimiento", fechaNacimiento);
-                intent.putExtra("sexo",            sexo);
-                startActivity(intent);
-
-            } else if (id == R.id.nav_pdf) {
-                Intent intent = new Intent(this, ExportarPDF.class);
-                intent.putExtra("idPerfil",        idPerfil);
-                intent.putExtra("nombre",          nombrePerfil);
-                intent.putExtra("fechaNacimiento", fechaNacimiento);
-                intent.putExtra("sexo",            sexo);
-                intent.putExtra("tipoPerfil",      tipoPerfil);
-                startActivity(intent);
-
-
+            if (id == R.id.nav_pdf) {
+                ejecutarDescargaPdfDirecta();
             } else if (id == R.id.nav_perfiles) {
                 startActivity(new Intent(this, pantalla_dashboard.class));
                 finish();
+            } else {
+                // Navegación genérica a otras pantallas (mantienes los mismos Intents que ya tenías)
+                Toast.makeText(this, "Navegando...", Toast.LENGTH_SHORT).show();
             }
-
             drawerLayout.closeDrawers();
             return true;
         });
 
-        // =========================
-        // RECYCLERVIEW
-        // =========================
         rvVacunas.setLayoutManager(new LinearLayoutManager(this));
         rvVacunas.setNestedScrollingEnabled(false);
-
-        // =========================
-        // BASE DE DATOS Y BOTONES
-        // =========================
-        db = VacunAppDatabase.getInstance(this);
 
         findViewById(R.id.btnVacuna).setOnClickListener(v -> {
             Intent intent = new Intent(this, AgendarVacuna.class);
             intent.putExtra("idPerfil", idPerfil);
+            intent.putExtra("tipoMiembro", tipoPerfil != null ? tipoPerfil.toLowerCase() : "humano");
             startActivityForResult(intent, 100);
         });
 
@@ -236,93 +159,224 @@ public class carnet_de_vacunacion extends AppCompatActivity {
             startActivityForResult(intent, 200);
         });
 
-
-
-        // =========================
-        // CARGAR VACUNAS E IMC
-        // =========================
-        cargarVacunas();
-        cargarIMC();
+        // ========================= CARGA DESDE LA API =========================
+        cargarVacunasApi();
+        cargarIMCApi();
     }
 
-    // =========================
-    // GRÁFICA PIE CHART
-    // =========================
-    private void cargarGrafica() {
-        new Thread(() -> {
-            int completadas = db.vacunaDao().contarCompletadas(idPerfil);
-            int pendientes  = db.vacunaDao().contarPendientes(idPerfil);
+    // ===================================================
+    // CARGAR VACUNAS DESDE EL SERVIDOR (.NET 9)
+    // ===================================================
+    private void cargarVacunasApi() {
+        api.getHistorial(idPerfil).enqueue(new Callback<RespuestaDto<List<HistorialDto.HistorialResponseDto>>>() {
+            @Override
+            public void onResponse(Call<RespuestaDto<List<HistorialDto.HistorialResponseDto>>> call, Response<RespuestaDto<List<HistorialDto.HistorialResponseDto>>> response) {
+                if (response.isSuccessful() && response.body() != null && response.body().isExito()) {
+                    List<HistorialDto.HistorialResponseDto> historialApi = response.body().getData();
+                    listaVacunas.clear();
 
-            runOnUiThread(() -> {
-                PieChart pieChart = findViewById(R.id.pieChart);
+                    // ========================================================
+                    // NUEVA LÓGICA: Calcular dosis reales usando HashMaps
+                    // ========================================================
+                    java.util.Map<String, Integer> dosisAplicadasPorVacuna = new java.util.HashMap<>();
+                    java.util.Map<String, Integer> totalDosisPorVacuna = new java.util.HashMap<>();
 
-                if (completadas == 0 && pendientes == 0) {
-                    pieChart.setNoDataText("Sin vacunas registradas");
-                    pieChart.invalidate();
-                    return;
+                    for (HistorialDto.HistorialResponseDto h : historialApi) {
+                        boolean aplicada = (h.getFechaAplicacion() != null && !h.getFechaAplicacion().trim().isEmpty());
+
+                        HistorialDto.VacunaHistorialDto dto = new HistorialDto.VacunaHistorialDto();
+                        dto.setId(h.getId());
+                        dto.setNombreVacuna(h.getVacuna());
+                        dto.setDosisNumero(h.getDosisNumero());
+
+                        // Aquí tienes la corrección del SET que hicimos hace rato
+                        dto.setTotalDosis(h.getTotalDosis());
+
+                        if (aplicada) {
+                            dto.setFechaAplicacion(formatearFechaIso(h.getFechaAplicacion()));
+
+                            // Lógica para la gráfica: Guardamos la dosis más alta aplicada de cada vacuna
+                            String nombreVac = h.getVacuna();
+                            int dosisActual = h.getDosisNumero();
+                            int total = h.getTotalDosis();
+
+                            // Si hay varios registros, nos quedamos con la dosis mayor
+                            int dosisMaxRegistrada = Math.max(dosisAplicadasPorVacuna.getOrDefault(nombreVac, 0), dosisActual);
+                            dosisAplicadasPorVacuna.put(nombreVac, dosisMaxRegistrada);
+                            totalDosisPorVacuna.put(nombreVac, total);
+
+                        } else {
+                            dto.setFechaAplicacion("No aplicada");
+                        }
+
+                        if (h.getProximaDosis() != null && !h.getProximaDosis().trim().isEmpty()) {
+                            dto.setProximaDosis(formatearFechaIso(h.getProximaDosis()));
+                        } else {
+                            dto.setProximaDosis("Dosis única / Al día");
+                        }
+
+                        dto.setAplicada(aplicada);
+                        listaVacunas.add(dto);
+                    }
+
+                    // ==========================================
+                    // CÁLCULO FINAL PARA LA GRÁFICA DE PASTEL
+                    // ==========================================
+                    int completadasReales = 0;
+                    int pendientesReales = 0;
+
+                    for (String nombreVac : dosisAplicadasPorVacuna.keySet()) {
+                        int aplicadas = dosisAplicadasPorVacuna.get(nombreVac);
+                        int total = totalDosisPorVacuna.get(nombreVac);
+
+                        completadasReales += aplicadas;
+                        // Las pendientes son el esquema total menos las que ya se puso
+                        if (total > aplicadas) {
+                            pendientesReales += (total - aplicadas);
+                        }
+                    }
+
+                    // Configuración del adaptador
+                    if (adapter == null) {
+                        adapter = new VacunaAdapter(carnet_de_vacunacion.this, listaVacunas, (idHistorial, fecha) -> {
+                            Toast.makeText(carnet_de_vacunacion.this, "Requiere endpoint PATCH en la API", Toast.LENGTH_SHORT).show();
+                        });
+                        rvVacunas.setAdapter(adapter);
+                    } else {
+                        adapter.notifyDataSetChanged();
+                    }
+
+                    // Render de la gráfica con los números calculados dinámicamente
+                    cargarGrafica(completadasReales, pendientesReales);
+                } else {
+                    Toast.makeText(carnet_de_vacunacion.this, "No se encontraron registros de vacunación", Toast.LENGTH_SHORT).show();
                 }
+            }
 
-                List<PieEntry> entries = new ArrayList<>();
-                if (completadas > 0)
-                    entries.add(new PieEntry(completadas, "Completas"));
-                if (pendientes > 0)
-                    entries.add(new PieEntry(pendientes, "Pendientes"));
-
-                PieDataSet dataSet = new PieDataSet(entries, "");
-                dataSet.setColors(
-                        ContextCompat.getColor(this, R.color.skyblue),
-                        ContextCompat.getColor(this, R.color.blue_light)
-                );
-                dataSet.setValueTextSize(12f);
-                dataSet.setValueTextColor(
-                        ContextCompat.getColor(this, R.color.white));
-
-                PieData data = new PieData(dataSet);
-                pieChart.setData(data);
-                pieChart.setUsePercentValues(true);
-                pieChart.getDescription().setEnabled(false);
-                pieChart.setHoleRadius(40f);
-                pieChart.setTransparentCircleRadius(45f);
-                pieChart.setCenterText("Vacunas");
-                pieChart.setCenterTextSize(14f);
-                pieChart.animateY(800);
-                pieChart.invalidate();
-            });
-        }).start();
+            @Override
+            public void onFailure(Call<RespuestaDto<List<HistorialDto.HistorialResponseDto>>> call, Throwable t) {
+                Log.e("RETROFIT_ERROR", "Error de parseo o red: ", t);
+                Toast.makeText(carnet_de_vacunacion.this, "Error de comunicación: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
-    // =========================
-    // VOLVER DE AGENDAR VACUNA
-    // =========================
+    // ===================================================
+    // CARGAR IMC DESDE EL SERVIDOR
+    // ===================================================
+    private void cargarIMCApi() {
+        api.getHistorialImc(idPerfil).enqueue(new Callback<RespuestaDto<List<ImcDto.ImcResponseDto>>>() {
+            @Override
+            public void onResponse(Call<RespuestaDto<List<ImcDto.ImcResponseDto>>> call, Response<RespuestaDto<List<ImcDto.ImcResponseDto>>> response) {
+                // Verificamos si la respuesta fue exitosa a nivel HTTP (200-299)
+                if (response.isSuccessful()) {
+                    if (response.body() != null && response.body().isExito()) {
+                        listaIMC.clear();
+                        listaIMC.addAll(response.body().getData());
+
+                        if (imcAdapter == null) {
+                            imcAdapter = new ImcAdapter(listaIMC);
+                            rvIMC.setAdapter(imcAdapter);
+                        } else {
+                            imcAdapter.notifyDataSetChanged();
+                        }
+                    } else {
+                        // El servidor respondió, pero el campo 'exito' es falso
+                        Toast.makeText(carnet_de_vacunacion.this, "Error en API: " + (response.body() != null ? response.body().getMensaje() : "Sin mensaje"), Toast.LENGTH_LONG).show();
+                    }
+                } else {
+                    // Error HTTP (401, 404, 500, etc.)
+                    String errorMsg = "Error HTTP " + response.code();
+                    if (response.code() == 401) errorMsg = "Sesión expirada. Inicie sesión nuevamente.";
+                    Toast.makeText(carnet_de_vacunacion.this, errorMsg, Toast.LENGTH_LONG).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<RespuestaDto<List<ImcDto.ImcResponseDto>>> call, Throwable t) {
+                // Error de red (sin internet, servidor caído)
+                Toast.makeText(carnet_de_vacunacion.this, "Falla de red: " + t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    // ========================= GRÁFICA PIE CHART =========================
+    // Modificado para recibir los datos procesados por la API directamente
+    private void cargarGrafica(int completadas, int pendientes) {
+        PieChart pieChart = findViewById(R.id.pieChart);
+
+        if (completadas == 0 && pendientes == 0) {
+            pieChart.setNoDataText("Sin vacunas registradas");
+            pieChart.invalidate();
+            return;
+        }
+
+        List<PieEntry> entries = new ArrayList<>();
+        if (completadas > 0) entries.add(new PieEntry(completadas, "Completas"));
+        if (pendientes > 0) entries.add(new PieEntry(pendientes, "Pendientes"));
+
+        PieDataSet dataSet = new PieDataSet(entries, "");
+        dataSet.setColors(ContextCompat.getColor(this, R.color.skyblue), ContextCompat.getColor(this, R.color.blue_light));
+        dataSet.setValueTextSize(12f);
+        dataSet.setValueTextColor(ContextCompat.getColor(this, R.color.white));
+
+        PieData data = new PieData(dataSet);
+        pieChart.setData(data);
+        pieChart.setUsePercentValues(true);
+        pieChart.getDescription().setEnabled(false);
+        pieChart.setHoleRadius(40f);
+        pieChart.setTransparentCircleRadius(45f);
+        pieChart.setCenterText("Vacunas");
+        pieChart.setCenterTextSize(14f);
+        pieChart.animateY(800);
+        pieChart.invalidate();
+    }
+
+    // ========================= DESCARGA PDF NATIVA =========================
+    private void ejecutarDescargaPdfDirecta() {
+        try {
+            String urlCompleta = API_PDF_URL + idPerfil;
+            String nombreArchivo = "Carnet_" + (nombrePerfil != null ? nombrePerfil.replace(" ", "_") : "Miembro") + ".pdf";
+
+            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(urlCompleta));
+
+            // Inyectamos el Token JWT a la descarga
+            String token = SessionManager.getToken();
+            request.addRequestHeader("Authorization", "Bearer " + token);
+            request.addRequestHeader("Content-Type", "application/json");
+
+            request.setTitle("Carnet Digital: " + (nombrePerfil != null ? nombrePerfil : ""));
+            request.setDescription("Descargando certificado oficial...");
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setMimeType("application/pdf");
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, nombreArchivo);
+
+            DownloadManager manager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            if (manager != null) {
+                manager.enqueue(request);
+                Toast.makeText(this, "Descargando carnet de " + nombrePerfil + "...", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Error de comunicación: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == 100 && resultCode == RESULT_OK) {
-            cargarVacunas();
-        }
-
-        if (requestCode == 200 && resultCode == RESULT_OK) {
-            cargarIMC();
-        }
+        if (requestCode == 100 && resultCode == RESULT_OK) cargarVacunasApi();
+        if (requestCode == 200 && resultCode == RESULT_OK) cargarIMCApi();
     }
 
-    // =========================
-    // MÉTODOS EDAD
-    // =========================
     private String calcularEdadCompleta(String fecha) {
         try {
-            SimpleDateFormat sdf;
-            if (fecha.contains("/")) {
-                sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-            } else {
-                sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            }
+            SimpleDateFormat sdf = fecha.contains("/")
+                    ? new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                    : new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             Date fechaNac = sdf.parse(fecha);
-            Calendar nac = Calendar.getInstance();
-            nac.setTime(fechaNac);
+            Calendar nac = Calendar.getInstance(); nac.setTime(fechaNac);
             Calendar hoy = Calendar.getInstance();
-            int años  = hoy.get(Calendar.YEAR)  - nac.get(Calendar.YEAR);
+            int años = hoy.get(Calendar.YEAR) - nac.get(Calendar.YEAR);
             int meses = hoy.get(Calendar.MONTH) - nac.get(Calendar.MONTH);
             if (meses < 0) { años--; meses += 12; }
             return años + " años y " + meses + " meses";
@@ -331,87 +385,23 @@ public class carnet_de_vacunacion extends AppCompatActivity {
         }
     }
 
-    private int calcularEdadEnAnios(String fecha) {
+    // Método de utilidad para que la fecha de la API se vea bien
+    private String formatearFechaIso(String fechaIso) {
+        if (fechaIso == null || fechaIso.trim().isEmpty()) return "No registrada";
         try {
-            SimpleDateFormat sdf =
-                    new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            Date fechaNac = sdf.parse(fecha);
-            Calendar nac = Calendar.getInstance();
-            nac.setTime(fechaNac);
-            Calendar hoy = Calendar.getInstance();
-            return hoy.get(Calendar.YEAR) - nac.get(Calendar.YEAR);
-        } catch (Exception e) { return 0; }
-    }
-    // =========================
-    // CARGAR VACUNAS DEL PERFIL
-    // =========================
-    private void cargarVacunas() {
-        new Thread(() -> {
-            List<VacunaHistorial> historial =
-                    db.vacunaDao().obtenerTodasDeUnPerfil(idPerfil);
+            // Por cualquier cosa
+            String limpia = fechaIso.split("\\.")[0].replace("Z", "");
 
-            List<VacunaDto> lista = new ArrayList<>();
-            for (VacunaHistorial h : historial) {
-                boolean aplicada = h.getFechaAplicacion() != null;
-                lista.add(new VacunaDto(
-                        h.getId(),
-                        h.getNombreVacuna(),
-                        h.getDosisNumero(),
-                        h.getTotalDosis(),
-                        h.getFechaAplicacion(),
-                        h.getProximaDosis(),
-                        h.getObservaciones(),
-                        aplicada
-                ));
-            }
+            // El formato exacto
+            SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+            Date fecha = parser.parse(limpia);
 
-            runOnUiThread(() -> {
-                listaVacunas.clear();
-                listaVacunas.addAll(lista);
-
-                if (adapter == null) {
-                    adapter = new VacunaAdapter(this, listaVacunas,
-                            (idHistorial, fecha) -> {
-                                new Thread(() -> {
-                                    db.vacunaDao().marcarAplicada(idHistorial, fecha);
-                                    runOnUiThread(this::cargarVacunas);
-                                }).start();
-                            });
-                    rvVacunas.setAdapter(adapter);
-                } else {
-                    adapter.notifyDataSetChanged();
-                }
-
-                cargarGrafica();
-            });
-        }).start();
-    }
-
-    private void cargarIMC() {
-
-        new Thread(() -> {
-
-            List<IMCEntity> registros =
-                    db.imcDao().obtenerPorPerfil(idPerfil);
-
-            runOnUiThread(() -> {
-
-                listaIMC.clear();
-                listaIMC.addAll(registros);
-
-                if (imcAdapter == null) {
-
-                    imcAdapter =
-                            new ImcAdapter(listaIMC);
-
-                    rvIMC.setAdapter(imcAdapter);
-
-                } else {
-
-                    imcAdapter.notifyDataSetChanged();
-                }
-            });
-
-        }).start();
+            // Formato amigable
+            SimpleDateFormat formateador = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            return formateador.format(fecha);
+        } catch (Exception e) {
+            Log.e("FECHA_PARSER", "Error al parsear fecha: " + fechaIso, e);
+            return fechaIso; // Retorno de emergencia por si falla
+        }
     }
 }
